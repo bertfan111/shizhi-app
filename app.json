@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "识字小天地",
+    "slug": "shi-zi-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "shizi",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.shizi.firstgrade",
+      "buildNumber": "1",
+      "infoPlist": {
+        "CFBundleLocalizations": [
+          "zh-Hans"
+        ],
+        "CFBundleDevelopmentRegion": "zh-Hans"
+      }
+    },
+    "android": {
+      "package": "com.shizi.firstgrade"
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "2b0f6860-af74-4ed4-862d-03a952871793"
+      }
+    },
+    "owner": "bertfan"
+  }
+}
