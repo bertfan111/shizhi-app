@@ -7,6 +7,7 @@ import {
   TextInput,
   useWindowDimensions,
   ScrollView,
+  Pressable,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -17,9 +18,8 @@ import {
   statusColor,
   statusLabel,
 } from '../../src/data/learningStore';
-import { BouncyPressable } from '../../src/components/BouncyPressable';
-import { ToyButton } from '../../src/components/ToyButton';
-import { FONT_HANZI, FONT_PINYIN, COLORS, RADIUS } from '../../src/theme';
+import { GradientBackground } from '../../src/components/GradientBackground';
+import { FONT_HANZI, FONT_PINYIN, COLORS } from '../../src/theme';
 import type { Character, LearningStatus } from '../../src/types';
 
 type VolumeFilter = 'all' | 'upper' | 'lower';
@@ -52,25 +52,20 @@ export default function LibraryScreen() {
   const { width } = useWindowDimensions();
   const all = useMemo(() => loadCharacters(), []);
   const { statusMap } = useProgress();
-  const [volume, setVolume] = useState<VolumeFilter>('all');
+  const [volume, setVolume] = useState<VolumeFilter>('upper');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [query, setQuery] = useState('');
 
-  const counts = useMemo(() => {
-    let upper = 0;
-    let lower = 0;
-    for (const c of all) {
-      if (c.volume === 'upper') upper++;
-      else if (c.volume === 'lower') lower++;
-    }
-    return { all: all.length, upper, lower };
-  }, [all]);
-
   const filtered = useMemo(() => {
     let result = all;
+    if (volume !== 'all') {
+      result = result.filter((c) => c.volume === volume);
+    }
+    if (statusFilter !== 'all') {
+      result = result.filter((c) => (statusMap[c.char] || 'new') === statusFilter);
+    }
     const q = query.trim();
     if (q) {
-      // 当有搜索词时，忽略上下册和状态的筛选，进行全库搜索
       const qStripped = stripTone(q);
       result = result.filter((c) => {
         if (c.char.includes(q)) return true;
@@ -79,13 +74,6 @@ export default function LibraryScreen() {
         if (stripTone(py).startsWith(qStripped)) return true;
         return false;
       });
-    } else {
-      if (volume !== 'all') {
-        result = result.filter((c) => c.volume === volume);
-      }
-      if (statusFilter !== 'all') {
-        result = result.filter((c) => (statusMap[c.char] || 'new') === statusFilter);
-      }
     }
     return result;
   }, [all, volume, statusFilter, query, statusMap]);
@@ -100,7 +88,7 @@ export default function LibraryScreen() {
   const cellSize = useMemo(() => {
     const horizontalPadding = 16 * 2;
     const totalGap = (columns - 1) * 8;
-    return Math.floor((width - horizontalPadding - totalGap) / columns);
+    return Math.max(56, Math.floor((width - horizontalPadding - totalGap) / columns));
   }, [width, columns]);
 
   const onCellPress = useCallback(
@@ -113,37 +101,47 @@ export default function LibraryScreen() {
   const renderItem = useCallback(
     ({ item }: { item: Character }) => {
       const status = (statusMap[item.char] || 'new') as LearningStatus;
+      const pinyinSize = Math.max(10, cellSize * 0.18);
+      const charSize = Math.max(20, cellSize * 0.55);
       return (
-        <ToyButton
+        <Pressable
           onPress={() => onCellPress(item.char)}
-          color={COLORS.card}
-          shadowColor={COLORS.borderSoft}
-          thickness={4}
-          radius={16}
-          style={{ width: cellSize, height: cellSize }}
+          style={[styles.cellCard, { width: cellSize, height: cellSize }]}
           accessibilityRole="button"
           accessibilityLabel={`选择生字 ${item.char}，拼音 ${item.pinyin}，${statusLabel(status)}`}
         >
           <View style={styles.cellFace}>
             <View style={[styles.statusDot, { backgroundColor: statusColor(status) }]} />
-            <Text style={[styles.cellPinyin, { fontSize: Math.max(10, cellSize * 0.18) }]}>
+            <Text
+              style={[
+                styles.cellPinyin,
+                { fontSize: pinyinSize, lineHeight: pinyinSize + 4 },
+              ]}
+              numberOfLines={1}
+              allowFontScaling={false}
+            >
               {item.pinyin}
             </Text>
             <Text
-              style={[styles.cellChar, { fontSize: Math.max(20, cellSize * 0.55) }]}
+              style={[
+                styles.cellChar,
+                { fontSize: charSize, lineHeight: charSize + 6 },
+              ]}
+              numberOfLines={1}
               allowFontScaling={false}
             >
               {item.char}
             </Text>
           </View>
-        </ToyButton>
+        </Pressable>
       );
     },
     [cellSize, onCellPress, statusMap],
   );
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <GradientBackground>
+      <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.topBar}>
         <View style={styles.spacer} />
         <Text style={styles.title}>字库</Text>
@@ -163,9 +161,9 @@ export default function LibraryScreen() {
           returnKeyType="search"
         />
         {query.length > 0 ? (
-          <BouncyPressable onPress={() => setQuery('')} style={styles.clearBtn}>
+          <Pressable onPress={() => setQuery('')} style={styles.clearBtn}>
             <Ionicons name="close-circle" size={18} color={COLORS.textLight} />
-          </BouncyPressable>
+          </Pressable>
         ) : null}
       </View>
 
@@ -173,16 +171,15 @@ export default function LibraryScreen() {
         {(['upper', 'lower', 'all'] as VolumeFilter[]).map((v) => {
           const active = volume === v;
           return (
-            <BouncyPressable
+            <Pressable
               key={v}
-              scaleTo={0.95}
               onPress={() => setVolume(v)}
               style={[styles.tab, active && styles.tabActive]}
             >
               <Text style={[styles.tabText, active && styles.tabTextActive]}>
                 {VOLUME_LABELS[v]}
               </Text>
-            </BouncyPressable>
+            </Pressable>
           );
         })}
       </View>
@@ -190,16 +187,15 @@ export default function LibraryScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={{ flexGrow: 0, flexShrink: 0, maxHeight: 64 }}
+        style={styles.statusFilterScroll}
         contentContainerStyle={styles.statusFilterRow}
       >
         {STATUS_FILTERS.map((s) => {
           const active = statusFilter === s.id;
           const color = s.id === 'all' ? COLORS.primaryDeep : statusColor(s.id);
           return (
-            <BouncyPressable
+            <Pressable
               key={s.id}
-              scaleTo={0.94}
               onPress={() => setStatusFilter(s.id)}
               style={[
                 styles.statusChip,
@@ -222,7 +218,7 @@ export default function LibraryScreen() {
               >
                 {s.label}
               </Text>
-            </BouncyPressable>
+            </Pressable>
           );
         })}
       </ScrollView>
@@ -242,14 +238,15 @@ export default function LibraryScreen() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       />
-    </SafeAreaView>
+      </SafeAreaView>
+    </GradientBackground>
   );
 }
 
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: 'transparent',
   },
   topBar: {
     flexDirection: 'row',
@@ -271,35 +268,45 @@ const styles = StyleSheet.create({
   },
   tabRow: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 4,
-    gap: 0,
+    marginHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 2,
+    marginTop: 6,
+    justifyContent: 'space-between',
   },
   tab: {
     flex: 1,
-    paddingVertical: 10,
+    height: 44,
+    paddingVertical: 9,
+    marginHorizontal: 10,
     borderBottomWidth: 3,
     borderBottomColor: 'transparent',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   tabActive: {
     borderBottomColor: COLORS.primary,
   },
   tabText: {
     color: COLORS.textMuted,
-    fontWeight: '600',
-    fontSize: 16,
+    fontWeight: '800',
+    fontSize: 14,
+    lineHeight: 20,
     fontFamily: FONT_HANZI,
   },
   tabTextActive: {
     color: COLORS.primaryDeep,
-    fontWeight: '800',
+  },
+  statusFilterScroll: {
+    flexGrow: 0,
+    flexShrink: 0,
+    maxHeight: 58,
   },
   statusFilterRow: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 8,
+    paddingTop: 10,
+    paddingBottom: 8,
+    alignItems: 'center',
   },
   statusChip: {
     flexDirection: 'row',
@@ -312,6 +319,7 @@ const styles = StyleSheet.create({
     borderColor: COLORS.borderSoft,
     backgroundColor: COLORS.card,
     marginRight: 8,
+    minHeight: 34,
   },
   statusChipDot: {
     width: 8,
@@ -322,6 +330,7 @@ const styles = StyleSheet.create({
     color: COLORS.text,
     fontFamily: FONT_HANZI,
     fontSize: 13,
+    lineHeight: 18,
     fontWeight: '600',
   },
   searchWrap: {
@@ -359,18 +368,34 @@ const styles = StyleSheet.create({
   },
   gridContent: {
     paddingHorizontal: 16,
-    paddingBottom: 32,
+    paddingBottom: 96,
   },
   row: {
-    gap: 8,
+    justifyContent: 'space-between',
     marginBottom: 8,
   },
+  cellCard: {
+    borderRadius: 16,
+    backgroundColor: COLORS.card,
+    borderWidth: 1,
+    borderColor: COLORS.borderSoft,
+    shadowColor: COLORS.primaryDeep,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 2,
+    overflow: 'visible',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   cellFace: {
-    flex: 1,
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
-    paddingVertical: 4,
+    paddingTop: 6,
+    paddingBottom: 6,
   },
   statusDot: {
     position: 'absolute',
@@ -385,12 +410,12 @@ const styles = StyleSheet.create({
     fontFamily: FONT_PINYIN,
     fontWeight: '600',
     marginBottom: 2,
+    includeFontPadding: true,
   },
   cellChar: {
     color: COLORS.text,
     fontFamily: FONT_HANZI,
     fontWeight: '700',
-    lineHeight: undefined,
-    includeFontPadding: false,
+    includeFontPadding: true,
   },
 });

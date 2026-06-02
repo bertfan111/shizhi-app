@@ -290,6 +290,9 @@ const styles = StyleSheet.create({
     elevation: 4,
     paddingTop: 18,
   },
+  hairTuft: {
+    display: 'none',
+  },
   eyesRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

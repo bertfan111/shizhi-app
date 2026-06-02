@@ -13,6 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useProgress } from '../../src/data/useProgress';
 import { loadCharacters } from '../../src/data/loadCharacters';
 import { buildAchievementSnapshot } from '../../src/data/achievementStore';
+import { GradientBackground } from '../../src/components/GradientBackground';
 import { ToyButton } from '../../src/components/ToyButton';
 import { FollowReadAssessment } from '../../src/components/FollowReadAssessment';
 import { WeeklyReportCard } from '../../src/components/WeeklyReportCard';
@@ -102,8 +103,9 @@ export default function ProfileScreen() {
   }, []);
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+    <GradientBackground>
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
           <Text style={styles.title}>我的</Text>
         </View>
@@ -181,15 +183,16 @@ export default function ProfileScreen() {
           <Text style={styles.aboutMeta}>共 {stats.total} 字，离线运行，不联网</Text>
           <Text style={styles.aboutMeta}>字体：霞鹜文楷 轻便版（SIL OFL）</Text>
         </View>
-      </ScrollView>
-    </SafeAreaView>
+        </ScrollView>
+      </SafeAreaView>
+    </GradientBackground>
   );
 }
 
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: 'transparent',
   },
   scrollContent: {
     paddingHorizontal: 16,

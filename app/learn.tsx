@@ -26,9 +26,9 @@ import {
 import { useProgress } from '../src/data/useProgress';
 import { CharacterCard } from '../src/components/CharacterCard';
 import { BouncyPressable } from '../src/components/BouncyPressable';
+import { GradientBackground } from '../src/components/GradientBackground';
 import { ToyButton } from '../src/components/ToyButton';
 import { COLORS, FONT_HANZI, RADIUS } from '../src/theme';
-import { safeBack } from '../src/utils/nav';
 import type { Character } from '../src/types';
 
 const PER_LESSON = 5;
@@ -245,7 +245,7 @@ export default function LearnScreen() {
   // 庆祝弹窗：返回（关卡模式回地图、其它模式回上一页）
   const onCelebrationBack = useCallback(() => {
     setShowCelebration(false);
-    safeBack(router);
+    router.replace('/');
   }, [router]);
 
   // 庆祝弹窗：留下继续看（仅"我会了"已是最后一张但用户想留在原地）
@@ -275,10 +275,11 @@ export default function LearnScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <GradientBackground>
+      <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.topBar}>
         <BouncyPressable
-          onPress={() => safeBack(router)}
+          onPress={() => router.replace('/')}
           style={styles.backBtn}
           accessibilityRole="button"
         >
@@ -498,14 +499,15 @@ export default function LearnScreen() {
           </View>
         </View>
       ) : null}
-    </SafeAreaView>
+      </SafeAreaView>
+    </GradientBackground>
   );
 }
 
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: 'transparent',
   },
   topBar: {
     flexDirection: 'row',
@@ -513,7 +515,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 12,
     paddingVertical: 12,
-    backgroundColor: COLORS.bg,
+    backgroundColor: 'transparent',
     borderBottomWidth: 2,
     borderBottomColor: COLORS.borderSoft,
   },

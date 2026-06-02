@@ -1,36 +1,49 @@
 /**
- * 全局主题：3D 玩具风 (Award-Winning Kids App Style)
+ * 全局主题：淡黄色 + 淡蓝色渐变儿童风
+ *
+ * 参考喜马拉雅儿童图标的视觉语言：
+ * - 大面积浅黄，明亮温暖
+ * - 辅以浅蓝，清爽干净
+ * - 控件保留 3D 厚度，但降低饱和度，避免刺眼
  */
 
 export const FONT_HANZI = 'LXGWWenKaiLite';
 export const FONT_PINYIN = 'LXGWWenKaiLite';
 
 export const COLORS = {
-  // 背景色：非常柔和的偏暖米白，保护视力且不抢戏
-  bg: '#F8F9FA',
+  // 页面底色 fallback，真实页面会使用 GRADIENTS.page
+  bg: '#FFF8D7',
   card: '#FFFFFF',
 
-  // 玩具积木色系 (主色 + 底部厚度阴影色)
-  toyBlue: { base: '#3B82F6', shadow: '#1D4ED8', light: '#DBEAFE' },
-  toyPink: { base: '#F43F5E', shadow: '#BE123C', light: '#FFE4E6' },
-  toyGreen: { base: '#10B981', shadow: '#047857', light: '#D1FAE5' },
-  toyOrange: { base: '#F59E0B', shadow: '#B45309', light: '#FEF3C7' },
-  toyPurple: { base: '#8B5CF6', shadow: '#5B21B6', light: '#EDE9FE' },
+  // 淡黄 + 淡蓝玩具积木色系
+  toyBlue: { base: '#69C7F7', shadow: '#2F97D8', light: '#DFF5FF' },
+  toyPink: { base: '#FF9FB7', shadow: '#E35D7D', light: '#FFE8EF' },
+  toyGreen: { base: '#7EDFA6', shadow: '#3CB978', light: '#E1F8EA' },
+  toyOrange: { base: '#FFD45C', shadow: '#E7A923', light: '#FFF1B8' },
+  toyPurple: { base: '#B9A8FF', shadow: '#8570E8', light: '#EFEAFF' },
 
   // 通用/基础
-  primary: '#F59E0B',
-  primaryDeep: '#B45309',
-  secondary: '#3B82F6',
-  accent: '#F43F5E',
+  primary: '#FFD45C',
+  primaryDeep: '#A66B00',
+  secondary: '#69C7F7',
+  accent: '#FF8FA8',
   
   // 边框和占位
-  border: '#E5E7EB',
-  borderSoft: '#F3F4F6',
+  border: '#F7D985',
+  borderSoft: '#FFF0B3',
 
   // 文本色：拒绝纯黑，使用圆润的深灰
-  text: '#1F2937',
-  textMuted: '#6B7280',
-  textLight: '#9CA3AF',
+  text: '#3F3A2F',
+  textMuted: '#8A7652',
+  textLight: '#B6A783',
+};
+
+export const GRADIENTS = {
+  page: ['#FFF9D8', '#EAF8FF'] as const,
+  card: ['#FFFFFF', '#FFF7CF'] as const,
+  tab: ['#FFF6C7', '#E7F7FF'] as const,
+  yellowButton: ['#FFE98A', '#FFD45C'] as const,
+  blueButton: ['#DDF6FF', '#8EDCFF'] as const,
 };
 
 // 统一定义的大圆角

@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useProgress } from '../../src/data/useProgress';
 import { statusColor, statusLabel } from '../../src/data/learningStore';
 import { findCharacter } from '../../src/data/loadCharacters';
+import { GradientBackground } from '../../src/components/GradientBackground';
 import { ToyButton } from '../../src/components/ToyButton';
 import { ProgressRing } from '../../src/components/ProgressRing';
 import { COLORS, FONT_HANZI, FONT_PINYIN, RADIUS } from '../../src/theme';
@@ -92,21 +93,24 @@ export default function HomeScreen() {
 
   if (!ready) {
     return (
-      <SafeAreaView style={styles.safe} edges={['top']}>
-        <View style={styles.loading}>
-          <ActivityIndicator size="large" color={COLORS.primary} />
-        </View>
-      </SafeAreaView>
+      <GradientBackground>
+        <SafeAreaView style={styles.safe} edges={['top']}>
+          <View style={styles.loading}>
+            <ActivityIndicator size="large" color={COLORS.primaryDeep} />
+          </View>
+        </SafeAreaView>
+      </GradientBackground>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+    <GradientBackground>
+      <SafeAreaView style={styles.safe} edges={['top']}>
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
         <View style={styles.headerRow}>
           <View>
             <Text style={styles.greet}>你好，小朋友</Text>
@@ -223,8 +227,9 @@ export default function HomeScreen() {
         )}
 
         <View style={{ height: 32 }} />
-      </ScrollView>
-    </SafeAreaView>
+        </ScrollView>
+      </SafeAreaView>
+    </GradientBackground>
   );
 }
 
@@ -330,7 +335,7 @@ const recentStyles = StyleSheet.create({
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: 'transparent',
   },
   loading: {
     flex: 1,

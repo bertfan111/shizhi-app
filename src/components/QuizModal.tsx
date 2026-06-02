@@ -1,6 +1,6 @@
 /**
  * 识字小测验模态：
- *  - 三题：听音选字、看图选字、看拼音选字
+ *  - 三题：听汉字选字、看汉字选拼音、看拼音选汉字
  *  - 题完毕后调用 onFinish(correctCount, total)
  *  - 干扰项从字库中"同册其它字"随机抽取
  */
@@ -15,10 +15,8 @@ import {
 } from 'react-native';
 import * as Speech from 'expo-speech';
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { BouncyPressable } from './BouncyPressable';
 import { loadCharacters } from '../data/loadCharacters';
-import { getImageFor } from '../data/imageMap';
 import { COLORS, FONT_HANZI, FONT_PINYIN } from '../theme';
 import type { Character } from '../types';
 
@@ -29,7 +27,7 @@ interface Props {
   onFinish: (correct: number, total: number) => void;
 }
 
-type QuestionType = 'listen' | 'image' | 'pinyin';
+type QuestionType = 'listen' | 'charToPinyin' | 'pinyin';
 
 interface Question {
   type: QuestionType;
@@ -53,28 +51,44 @@ function pickDistractors(target: Character, pool: Character[], n: number): strin
   return shuffle(source).slice(0, n).map((c) => c.char);
 }
 
+function pickPinyinDistractors(target: Character, pool: Character[], n: number): string[] {
+  const sameVolume = pool.filter(
+    (c) => c.volume === target.volume && c.char !== target.char && c.pinyin !== target.pinyin,
+  );
+  const fallback = pool.filter((c) => c.char !== target.char && c.pinyin !== target.pinyin);
+  const source = sameVolume.length >= n ? sameVolume : fallback;
+  const out: string[] = [];
+  for (const c of shuffle(source)) {
+    if (c.pinyin && !out.includes(c.pinyin)) out.push(c.pinyin);
+    if (out.length >= n) break;
+  }
+  return out;
+}
+
 function buildQuestions(target: Character, pool: Character[]): Question[] {
-  const distractors = pickDistractors(target, pool, 9);
+  const distractors = pickDistractors(target, pool, 6);
+  const pinyinDistractors = pickPinyinDistractors(target, pool, 3);
   const optionsFor = (start: number) => shuffle([target.char, ...distractors.slice(start, start + 3)]);
+  const pinyinOptions = shuffle([target.pinyin, ...pinyinDistractors.slice(0, 3)]);
 
   return [
     {
       type: 'listen',
-      prompt: '听拼音，选汉字',
+      prompt: '听汉字，选汉字',
       answer: target.char,
       options: optionsFor(0),
     },
     {
-      type: 'image',
-      prompt: '看图，选汉字',
-      answer: target.char,
-      options: optionsFor(3),
+      type: 'charToPinyin',
+      prompt: '看汉字，选拼音',
+      answer: target.pinyin,
+      options: pinyinOptions,
     },
     {
       type: 'pinyin',
       prompt: '看拼音，选汉字',
       answer: target.char,
-      options: optionsFor(6),
+      options: optionsFor(3),
     },
   ];
 }
@@ -100,7 +114,7 @@ export const QuizModal: React.FC<Props> = ({ visible, target, onClose, onFinish 
     Animated.timing(animOpacity, { toValue: 1, duration: 200, useNativeDriver: true }).start();
   }, [visible, target, allChars, animOpacity]);
 
-  // 进入"听音选字"题时朗读拼音
+  // 进入"听汉字选字"题时朗读汉字本身，而不是拼音
   useEffect(() => {
     if (!visible || phase !== 'quiz') return;
     const q = questions[step];
@@ -108,7 +122,7 @@ export const QuizModal: React.FC<Props> = ({ visible, target, onClose, onFinish 
       Speech.stop().catch(() => {});
       // 微延迟，让模态先出现
       const t = setTimeout(() => {
-        Speech.speak(target.pinyin || target.char, {
+        Speech.speak(target.char, {
           language: 'zh-CN',
           rate: 0.85,
           pitch: 1.05,
@@ -145,7 +159,7 @@ export const QuizModal: React.FC<Props> = ({ visible, target, onClose, onFinish 
 
   const replay = () => {
     Speech.stop().catch(() => {});
-    Speech.speak(target.pinyin || target.char, {
+    Speech.speak(target.char, {
       language: 'zh-CN',
       rate: 0.85,
       pitch: 1.05,
@@ -171,21 +185,12 @@ export const QuizModal: React.FC<Props> = ({ visible, target, onClose, onFinish 
                 {q.type === 'listen' ? (
                   <BouncyPressable onPress={replay} style={styles.listenBtn} scaleTo={0.92}>
                     <Ionicons name="volume-high" size={36} color="#FFFFFF" />
-                    <Text style={styles.listenText}>再听一次</Text>
+                    <Text style={styles.listenText}>再听一次汉字</Text>
                   </BouncyPressable>
-                ) : q.type === 'image' ? (
-                  <View style={styles.imageWrap}>
-                    {getImageFor(target.char) ? (
-                      <Image
-                        source={getImageFor(target.char)}
-                        style={styles.image}
-                        contentFit="cover"
-                      />
-                    ) : (
-                      <View style={[styles.image, styles.imagePlaceholder]}>
-                        <Text style={styles.imagePlaceholderText}>?</Text>
-                      </View>
-                    )}
+                ) : q.type === 'charToPinyin' ? (
+                  <View style={styles.bigCharCard}>
+                    <Text style={styles.bigChar}>{target.char}</Text>
+                    <Text style={styles.bigCharTip}>给这个字选拼音</Text>
                   </View>
                 ) : (
                   <Text style={styles.bigPinyin}>{target.pinyin}</Text>
@@ -211,7 +216,14 @@ export const QuizModal: React.FC<Props> = ({ visible, target, onClose, onFinish 
                       accessibilityRole="button"
                       accessibilityLabel={opt}
                     >
-                      <Text style={styles.optionText}>{opt}</Text>
+                      <Text
+                        style={[
+                          styles.optionText,
+                          q.type === 'charToPinyin' && styles.optionPinyinText,
+                        ]}
+                      >
+                        {opt}
+                      </Text>
                       {showResult && isAnswer ? (
                         <Ionicons name="checkmark-circle" size={20} color="#10B981" style={styles.optionMark} />
                       ) : null}
@@ -372,6 +384,30 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 4,
   },
+  bigCharCard: {
+    width: 180,
+    height: 180,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 24,
+    backgroundColor: '#FEF3C7',
+    borderWidth: 4,
+    borderColor: COLORS.primary,
+  },
+  bigChar: {
+    color: COLORS.text,
+    fontFamily: FONT_HANZI,
+    fontSize: 84,
+    fontWeight: '900',
+    includeFontPadding: false,
+  },
+  bigCharTip: {
+    color: COLORS.primaryDeep,
+    fontFamily: FONT_HANZI,
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 6,
+  },
   optionsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -402,6 +438,11 @@ const styles = StyleSheet.create({
     fontFamily: FONT_HANZI,
     fontSize: 36,
     fontWeight: '800',
+  },
+  optionPinyinText: {
+    fontFamily: FONT_PINYIN,
+    fontSize: 22,
+    letterSpacing: 1,
   },
   optionMark: {
     position: 'absolute',

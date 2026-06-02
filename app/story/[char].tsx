@@ -9,11 +9,9 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { findCharacter } from '../../src/data/loadCharacters';
+import { findCharacter, loadCharacters } from '../../src/data/loadCharacters';
 import {
   applyQuizResult,
-  markForgot,
-  markKnown,
   markSpoken,
   markView,
   statusColor,
@@ -21,6 +19,7 @@ import {
 } from '../../src/data/learningStore';
 import { QuizModal } from '../../src/components/QuizModal';
 import { useProgress } from '../../src/data/useProgress';
+import { GradientBackground } from '../../src/components/GradientBackground';
 import { PinyinText } from '../../src/components/PinyinText';
 import { StoryImage } from '../../src/components/StoryImage';
 import { SpeakButton } from '../../src/components/SpeakButton';
@@ -28,7 +27,6 @@ import { BouncyPressable } from '../../src/components/BouncyPressable';
 import { ToyButton } from '../../src/components/ToyButton';
 import { BUILT_IN_VOICE_PROFILES, SpeechControls } from '../../src/components/SpeechControls';
 import { useSpeech } from '../../src/hooks/useSpeech';
-import { annotateText } from '../../src/data/annotateText';
 import { FONT_HANZI, FONT_PINYIN, COLORS, RADIUS } from '../../src/theme';
 import { safeBack } from '../../src/utils/nav';
 
@@ -42,7 +40,14 @@ export default function StoryScreen() {
   const [controlsOpen, setControlsOpen] = useState(false);
   const [quizOpen, setQuizOpen] = useState(false);
 
+  const allChars = useMemo(() => loadCharacters(), []);
   const data = useMemo(() => (char ? findCharacter(char) : undefined), [char]);
+  const nextData = useMemo(() => {
+    if (!char || allChars.length === 0) return undefined;
+    const currentIndex = allChars.findIndex((item) => item.char === char);
+    if (currentIndex < 0) return allChars[0];
+    return allChars[(currentIndex + 1) % allChars.length];
+  }, [allChars, char]);
 
   // 学习状态：用于显示当前 chip 与控制按钮高亮
   const { statusMap } = useProgress();
@@ -77,6 +82,11 @@ export default function StoryScreen() {
     toggle();
   };
 
+  const handleNext = () => {
+    if (!nextData) return;
+    router.replace({ pathname: '/learn', params: { char: nextData.char } });
+  };
+
   if (!char || !data) {
     return (
       <View style={[styles.notFound, { paddingTop: insets.top + 40 }]}>
@@ -89,16 +99,13 @@ export default function StoryScreen() {
     );
   }
 
-  const imageWidth = Math.min(width - 40, 300);
-  const imageHeight = imageWidth;
+  const imageWidth = width;
+  const imageHeight = Math.round(width * 3 / 4);
   const hasStory = Boolean(data.story?.text);
-  const storyAnnotated = useMemo(
-    () => (data.story?.text ? annotateText(data.story.text) : data.story?.annotated || []),
-    [data.story?.annotated, data.story?.text],
-  );
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <GradientBackground>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* 顶部工具栏 */}
       <View style={styles.topBar}>
         <BouncyPressable
@@ -153,7 +160,7 @@ export default function StoryScreen() {
           {hasStory ? (
             <View style={styles.textContent}>
               <PinyinText
-                annotated={storyAnnotated}
+                annotated={data.story.annotated}
                 charSize={28}
                 pinyinSize={14}
                 targetChar={data.char}
@@ -186,45 +193,27 @@ export default function StoryScreen() {
             </View>
           </ToyButton>
 
-          {/* 学习状态按钮 */}
-          <View style={styles.actionRow}>
-            <ToyButton
-              onPress={() => {
-                markForgot(data.char);
-                safeBack(router);
-              }}
-              color={learningStatus === 'forgot' ? '#F43F5E' : '#FFFFFF'}
-              shadowColor={learningStatus === 'forgot' ? '#BE123C' : '#FECACA'}
-              thickness={6}
-              radius={RADIUS.lg}
-              style={{ flex: 1 }}
-              accessibilityRole="button"
-              accessibilityLabel="还不会，加入错字本"
-            >
-              <View style={styles.actionBtnFace}>
-                <Ionicons name="sad" size={24} color={learningStatus === 'forgot' ? '#FFF' : '#F43F5E'} />
-                <Text style={[styles.actionBtnText, { color: learningStatus === 'forgot' ? '#FFF' : '#F43F5E' }]}>还不会</Text>
-              </View>
-            </ToyButton>
-            <ToyButton
-              onPress={() => {
-                markKnown(data.char);
-                safeBack(router);
-              }}
-              color={learningStatus === 'mastered' ? '#10B981' : '#FFFFFF'}
-              shadowColor={learningStatus === 'mastered' ? '#047857' : '#A7F3D0'}
-              thickness={6}
-              radius={RADIUS.lg}
-              style={{ flex: 1 }}
-              accessibilityRole="button"
-              accessibilityLabel="我会了，标为已掌握"
-            >
-              <View style={styles.actionBtnFace}>
-                <Ionicons name="happy" size={24} color={learningStatus === 'mastered' ? '#FFF' : '#10B981'} />
-                <Text style={[styles.actionBtnText, { color: learningStatus === 'mastered' ? '#FFF' : '#10B981' }]}>我会了</Text>
-              </View>
-            </ToyButton>
-          </View>
+          {/* 下一个字 */}
+          <ToyButton
+            onPress={handleNext}
+            color={COLORS.primary}
+            shadowColor={COLORS.primaryDeep}
+            thickness={6}
+            radius={RADIUS.lg}
+            style={styles.nextButton}
+            accessibilityRole="button"
+            accessibilityLabel={nextData ? `下一个字，${nextData.char}` : '下一个字'}
+          >
+            <View style={styles.nextButtonFace}>
+              <Text style={styles.nextButtonText}>下一个</Text>
+              {nextData ? (
+                <View style={styles.nextPreviewPill}>
+                  <Text style={styles.nextPreviewText}>{nextData.char}</Text>
+                </View>
+              ) : null}
+              <Ionicons name="arrow-forward" size={22} color="#FFFFFF" />
+            </View>
+          </ToyButton>
         </View>
       </ScrollView>
 
@@ -264,14 +253,15 @@ export default function StoryScreen() {
           />
         </BouncyPressable>
       </View>
-    </View>
+      </View>
+    </GradientBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: 'transparent',
   },
   topBar: {
     flexDirection: 'row',
@@ -358,45 +348,60 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
   },
-  actionRow: {
-    flexDirection: 'row',
-    gap: 16,
+  nextButton: {
     marginTop: 16,
   },
-  actionBtnFace: {
+  nextButtonFace: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     paddingVertical: 16,
   },
-  actionBtnText: {
+  nextButtonText: {
+    color: '#FFFFFF',
     fontFamily: FONT_HANZI,
     fontSize: 18,
-    fontWeight: '800',
+    fontWeight: '900',
+  },
+  nextPreviewPill: {
+    minWidth: 36,
+    height: 30,
+    paddingHorizontal: 8,
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.22)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.45)',
+  },
+  nextPreviewText: {
+    color: '#FFFFFF',
+    fontFamily: FONT_HANZI,
+    fontSize: 20,
+    fontWeight: '900',
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
+    paddingTop: 0,
     alignItems: 'center',
   },
   imageWrap: {
-    marginBottom: 12,
+    width: '100%',
+    marginBottom: 16,
   },
   imageShadow: {
-    borderRadius: 24,
     overflow: 'hidden',
     backgroundColor: COLORS.card,
-    borderWidth: 4,
-    borderColor: '#FFF',
     shadowColor: COLORS.primaryDeep,
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 3,
   },
   storyCard: {
-    width: '100%',
+    width: 'auto',
+    alignSelf: 'stretch',
+    marginHorizontal: 20,
     backgroundColor: COLORS.card,
     borderRadius: 28,
     paddingVertical: 18,

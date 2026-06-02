@@ -20,7 +20,7 @@ export const AchievementGrid: React.FC<Props> = ({ achievements }) => {
       <View style={styles.grid}>
         {achievements.map((item) => {
           const percent = Math.min(100, Math.round((item.current / item.target) * 100));
-          const color = item.unlocked ? item.color : COLORS.textLight;
+          const color = item.unlocked ? COLORS.primary : COLORS.textLight;
           return (
             <View
               key={item.id}
@@ -29,7 +29,7 @@ export const AchievementGrid: React.FC<Props> = ({ achievements }) => {
                 item.unlocked ? styles.medalUnlocked : styles.medalLocked,
               ]}
             >
-              <View style={[styles.iconBubble, { backgroundColor: item.unlocked ? `${item.color}22` : COLORS.borderSoft }]}>
+              <View style={[styles.iconBubble, { backgroundColor: item.unlocked ? '#FEF3C7' : COLORS.borderSoft }]}>
                 <Ionicons
                   name={item.icon as keyof typeof Ionicons.glyphMap}
                   size={24}
@@ -48,7 +48,7 @@ export const AchievementGrid: React.FC<Props> = ({ achievements }) => {
                     styles.progressFill,
                     {
                       width: `${percent}%`,
-                      backgroundColor: item.unlocked ? item.color : COLORS.textLight,
+                      backgroundColor: item.unlocked ? COLORS.primary : COLORS.textLight,
                     },
                   ]}
                 />

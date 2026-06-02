@@ -16,6 +16,7 @@ import { loadCharacters } from '../src/data/loadCharacters';
 import { useProgress } from '../src/data/useProgress';
 import { statusColor } from '../src/data/learningStore';
 import { BouncyPressable } from '../src/components/BouncyPressable';
+import { GradientBackground } from '../src/components/GradientBackground';
 import { ToyButton } from '../src/components/ToyButton';
 import { COLORS, FONT_HANZI, FONT_PINYIN, RADIUS } from '../src/theme';
 import { safeBack } from '../src/utils/nav';
@@ -58,7 +59,8 @@ export default function MapScreen() {
   const cardWidth = (width - 16 * 2 - 12 * (columns - 1)) / columns;
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <GradientBackground>
+      <SafeAreaView style={styles.safe} edges={['top']}>
       <View style={styles.topBar}>
         <BouncyPressable onPress={() => safeBack(router)} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={22} color={COLORS.primaryDeep} />
@@ -98,7 +100,8 @@ export default function MapScreen() {
         )}
         showsVerticalScrollIndicator={false}
       />
-    </SafeAreaView>
+      </SafeAreaView>
+    </GradientBackground>
   );
 }
 
@@ -158,7 +161,7 @@ const LessonCard: React.FC<{
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: 'transparent',
   },
   topBar: {
     flexDirection: 'row',
